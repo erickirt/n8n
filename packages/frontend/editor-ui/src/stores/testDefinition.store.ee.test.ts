@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { useTestDefinitionStore } from '@/stores/testDefinition.store.ee'; // Adjust the import path as necessary
-import { useRootStore } from '@/stores/root.store';
+import { useRootStore } from '@n8n/stores/useRootStore';
 import { usePostHog } from '@/stores/posthog.store';
 import { useAnnotationTagsStore } from '@/stores/tags.store';
 import type { TestDefinitionRecord, TestRunRecord } from '@/api/testDefinition.ee';
@@ -37,7 +37,7 @@ vi.mock('@/api/testDefinition.ee', () => ({
 	deleteTestRun,
 }));
 
-vi.mock('@/stores/root.store', () => ({
+vi.mock('@n8n/stores/useRootStore', () => ({
 	useRootStore: vi.fn(() => ({
 		restApiContext: { instanceId: 'test-instance-id' },
 	})),
@@ -74,9 +74,6 @@ const TEST_RUN: TestRunRecord = {
 	updatedAt: '2024-01-01',
 	runAt: '2024-01-01',
 	completedAt: '2024-01-01',
-	failedCases: 0,
-	totalCases: 1,
-	passedCases: 1,
 };
 
 describe('testDefinition.store.ee', () => {

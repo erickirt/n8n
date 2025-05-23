@@ -1444,6 +1444,11 @@ export interface INodePropertyModeTypeOptions {
 	searchListMethod?: string; // Supported by: options
 	searchFilterRequired?: boolean;
 	searchable?: boolean;
+	allowNewResource?: {
+		label: string;
+		defaultName: string;
+		method: string;
+	};
 }
 
 export interface INodePropertyMode {
@@ -2587,6 +2592,7 @@ export interface INodeGraphItem {
 	workflow_id?: string; //@n8n/n8n-nodes-langchain.toolWorkflow and n8n-nodes-base.executeWorkflow
 	runs?: number;
 	items_total?: number;
+	metric_names?: string[];
 }
 
 export interface INodeNameIndex {
@@ -2597,6 +2603,7 @@ export interface INodesGraphResult {
 	nodeGraph: INodesGraph;
 	nameIndices: INodeNameIndex;
 	webhookNodeNames: string[];
+	evaluationTriggerNodeNames: string[];
 }
 
 export interface FeatureFlags {
@@ -2645,7 +2652,7 @@ export interface ExecutionSummary {
 	retrySuccessId?: string | null;
 	waitTill?: Date;
 	createdAt: Date;
-	startedAt: Date;
+	startedAt: Date | null;
 	stoppedAt?: Date;
 	workflowId: string;
 	workflowName?: string;
