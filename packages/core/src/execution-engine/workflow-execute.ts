@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+import { TOOL_EXECUTOR_NODE_NAME } from '@n8n/constants';
 import { Container } from '@n8n/di';
 import * as assert from 'assert/strict';
 import { setMaxListeners } from 'events';
@@ -41,6 +42,7 @@ import type {
 	INodeType,
 	ITaskStartedData,
 	AiAgentRequest,
+	IWorkflowExecutionDataProcess,
 } from 'n8n-workflow';
 import {
 	LoggerProxy as Logger,
@@ -71,10 +73,8 @@ import {
 	handleCycles,
 	filterDisabledNodes,
 	rewireGraph,
-	isTool,
 	getNextExecutionIndex,
 } from './partial-execution-utils';
-import { TOOL_EXECUTOR_NODE_NAME } from './partial-execution-utils/rewire-graph';
 import { RoutingNode } from './routing-node';
 import { TriggersAndPollers } from './triggers-and-pollers';
 
@@ -118,6 +118,7 @@ export class WorkflowExecute {
 		startNode?: INode,
 		destinationNode?: string,
 		pinData?: IPinData,
+		triggerToStartFrom?: IWorkflowExecutionDataProcess['triggerToStartFrom'],
 	): PCancelable<IRun> {
 		this.status = 'running';
 
@@ -139,7 +140,7 @@ export class WorkflowExecute {
 		const nodeExecutionStack: IExecuteData[] = [
 			{
 				node: startNode,
-				data: {
+				data: triggerToStartFrom?.data?.data ?? {
 					main: [
 						[
 							{
@@ -366,8 +367,12 @@ export class WorkflowExecute {
 
 		let graph = DirectedGraph.fromWorkflow(workflow);
 
+		const destinationNodeType = workflow.nodeTypes.getByNameAndVersion(
+			destination.type,
+			destination.typeVersion,
+		);
 		// Partial execution of nodes as tools
-		if (isTool(destination, workflow.nodeTypes)) {
+		if (NodeHelpers.isTool(destinationNodeType.description, destination.parameters)) {
 			graph = rewireGraph(destination, graph, agentRequest);
 			workflow = graph.toWorkflow({ ...workflow });
 			// Rewire destination node to the virtual agent
@@ -1045,11 +1050,10 @@ export class WorkflowExecute {
 
 	private getCustomOperation(node: INode, type: INodeType) {
 		if (!type.customOperations) return undefined;
-
-		if (!node.parameters) return undefined;
+		if (!node.parameters && !node.forceCustomOperation) return undefined;
 
 		const { customOperations } = type;
-		const { resource, operation } = node.parameters;
+		const { resource, operation } = node.forceCustomOperation ?? node.parameters;
 
 		if (typeof resource !== 'string' || typeof operation !== 'string') return undefined;
 		if (!customOperations[resource] || !customOperations[resource][operation]) return undefined;
